@@ -11,10 +11,13 @@ docs-kh-cathaylife-learning-school/
 │   └── rules/
 │       ├── project-structure.md  # 本檔案
 │       └── coding-standards.md   # 編碼規範
-└── tutorials/                    # 教學頁面目錄（❌ 禁止修改）
-    ├── osi-model-tutorial.html   # 來源：Claude Web
-    ├── rate-limiter-tutorial.html
-    └── {new-tutorial}.html       # 由使用者從 Claude Web 引入
+└── tutorials/                    # 教學頁面目錄（❌ 禁止修改內容）
+    ├── 01-internet/              # Internet 基礎
+    │   └── osi-model-tutorial.html
+    ├── 17-scaling-strategies/    # 擴展策略
+    │   └── rate-limiter-tutorial.html
+    └── {編號}-{分類名}/           # 依分類編號建立子目錄
+        └── {skill}-tutorial.html
 ```
 
 ---
@@ -24,7 +27,7 @@ docs-kh-cathaylife-learning-school/
 | 檔案類型 | 放置位置 | 說明 | 可修改 |
 |---------|---------|------|--------|
 | 首頁 | `/index.html` | 唯一入口，包含導航 | ✅ 可修改 |
-| 教學頁面 | `/tutorials/*.html` | 所有教學內容 | ❌ **禁止修改** |
+| 教學頁面 | `/tutorials/{編號}-{分類}/*.html` | 依分類放置 | ❌ **禁止修改** |
 | 規則文件 | `/.claude/rules/*.md` | AI 規範文件 | ✅ 可修改 |
 | 專案文件 | `/*.md` | README 等說明文件 | ✅ 可修改 |
 
@@ -53,10 +56,18 @@ docs-kh-cathaylife-learning-school/
 | 步驟 | 操作 | 執行者 |
 |------|------|--------|
 | 1 | 在 Claude Web 產生教學 HTML | 使用者 |
-| 2 | 將檔案放入 `tutorials/` 目錄 | 使用者 |
+| 2 | 將檔案放入對應的 `tutorials/{編號}-{分類}/` 目錄 | 使用者 |
 | 3 | 更新 `index.html` 的 `skillTree` 資料 | AI |
 
 > ⚠️ AI 僅負責步驟 3，不建立或修改 tutorials/ 內的檔案
+
+### 分類目錄命名規則
+
+| 格式 | 範例 |
+|------|------|
+| `{編號}-{分類名}` | `01-internet`, `08-authentication`, `17-scaling-strategies` |
+
+> 目錄名稱對應技能分類對照表的編號，使用小寫英文與連字號
 
 ### 檔案命名（供 Claude Web 參考）
 
@@ -101,7 +112,7 @@ docs-kh-cathaylife-learning-school/
 
 ```
 ✅ index.html
-✅ tutorials/*.html
+✅ tutorials/**/*.html
 ✅ CLAUDE.md
 ✅ README.md
 ✅ .claude/rules/*.md
