@@ -971,16 +971,74 @@
                     </div>
                 </div>
                 <p style="text-align: center; color: var(--text-secondary); margin: 1rem 0;">
-                    桶容量: <strong id="bucketCapacity">4</strong> | 
-                    當前令牌數: <strong id="currentTokens">2</strong> | 
-                    填充速率: <strong id="refillRate">2</strong> tokens/秒
+                    桶容量: <strong id="bucketCapacity">4</strong> |
+                    當前令牌數: <strong id="currentTokens">2</strong> |
+                    填充速率: <strong>1</strong> token/秒
+                    <span id="autoRefillStatus" style="color: var(--success-color); margin-left: 0.5rem;">⚡ 自動補充中</span>
                 </p>
                 <div class="demo-controls">
                     <button class="btn" onclick="sendRequest()">發送請求</button>
-                    <button class="btn btn-secondary" onclick="refillTokens()">手動填充</button>
+                    <button class="btn btn-secondary" onclick="toggleAutoRefill()" id="toggleRefillBtn">暫停補充</button>
                     <button class="btn btn-secondary" onclick="resetBucket()">重置</button>
                 </div>
                 <div id="demoMessage" style="text-align: center; margin-top: 1rem; font-size: 1.1rem; font-weight: 600;"></div>
+
+                <!-- API Sequence Flow -->
+                <div class="sequence-flow" style="margin-top: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <h4 style="color: var(--primary-color); text-align: center; margin-bottom: 1.5rem;">📊 API Request Sequence Flow</h4>
+                    <div class="flow-container" style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <!-- Client -->
+                        <div class="flow-node" style="background: var(--bg-card); border: 2px solid var(--primary-color); border-radius: 8px; padding: 0.75rem 1rem; text-align: center; min-width: 80px;">
+                            <div style="font-size: 1.5rem;">👤</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Client</div>
+                        </div>
+
+                        <!-- Arrow 1 -->
+                        <div class="flow-arrow" style="color: var(--primary-color); font-size: 1.2rem;">→</div>
+
+                        <!-- Rate Limiter -->
+                        <div class="flow-node" id="flowRateLimiter" style="background: var(--bg-card); border: 2px solid var(--warning-color); border-radius: 8px; padding: 0.75rem 1rem; text-align: center; min-width: 100px; transition: all 0.3s;">
+                            <div style="font-size: 1.5rem;">🚦</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Rate Limiter</div>
+                        </div>
+
+                        <!-- Arrow 2 -->
+                        <div class="flow-arrow" style="color: var(--primary-color); font-size: 1.2rem;">→</div>
+
+                        <!-- Token Check -->
+                        <div class="flow-node" id="flowTokenCheck" style="background: var(--bg-card); border: 2px solid var(--secondary-color); border-radius: 8px; padding: 0.75rem 1rem; text-align: center; min-width: 100px; transition: all 0.3s;">
+                            <div style="font-size: 1.5rem;">🪣</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Token Check</div>
+                            <div id="flowTokenStatus" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--success-color);">tokens > 0?</div>
+                        </div>
+
+                        <!-- Branch -->
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-left: 0.5rem;">
+                            <!-- Success Path -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: var(--success-color); font-size: 0.9rem;">✓</span>
+                                <div class="flow-node" id="flowSuccess" style="background: rgba(16, 185, 129, 0.1); border: 2px solid var(--success-color); border-radius: 8px; padding: 0.5rem 0.75rem; text-align: center; min-width: 90px; transition: all 0.3s;">
+                                    <div style="font-size: 0.85rem; color: var(--success-color);">200 OK</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">token--</div>
+                                </div>
+                            </div>
+                            <!-- Reject Path -->
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: var(--error-color); font-size: 0.9rem;">✗</span>
+                                <div class="flow-node" id="flowReject" style="background: rgba(239, 68, 68, 0.1); border: 2px solid var(--error-color); border-radius: 8px; padding: 0.5rem 0.75rem; text-align: center; min-width: 90px; transition: all 0.3s;">
+                                    <div style="font-size: 0.85rem; color: var(--error-color);">429</div>
+                                    <div style="font-size: 0.7rem; color: var(--text-muted);">Rejected</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flow Legend -->
+                    <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                        <span>🟢 允許請求時高亮綠色路徑</span>
+                        <span>🔴 拒絕請求時高亮紅色路徑</span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -1525,50 +1583,141 @@ done</code>
         // Token Bucket Demo
         let tokens = 2;
         const maxTokens = 4;
-        const refillAmount = 2;
+        let autoRefillEnabled = true;
+        let refillIntervalId = null;
 
         function updateBucketDisplay() {
             const fillHeight = (tokens / maxTokens) * 100;
             document.getElementById('bucketFill').style.height = fillHeight + '%';
             document.getElementById('currentTokens').textContent = tokens;
             document.getElementById('bucketCapacity').textContent = maxTokens;
-            document.getElementById('refillRate').textContent = refillAmount;
         }
 
         function sendRequest() {
             const message = document.getElementById('demoMessage');
-            if (tokens > 0) {
-                tokens--;
-                message.textContent = '✅ 請求成功！令牌數: ' + tokens;
-                message.style.color = 'var(--success-color)';
-            } else {
-                message.textContent = '❌ 請求被拒絕！令牌不足';
-                message.style.color = 'var(--error-color)';
-            }
-            updateBucketDisplay();
+            const flowRateLimiter = document.getElementById('flowRateLimiter');
+            const flowTokenCheck = document.getElementById('flowTokenCheck');
+            const flowSuccess = document.getElementById('flowSuccess');
+            const flowReject = document.getElementById('flowReject');
+
+            // Reset flow highlights
+            resetFlowHighlights();
+
+            // Animate flow: Rate Limiter
+            flowRateLimiter.style.boxShadow = '0 0 15px var(--warning-color)';
+            flowRateLimiter.style.transform = 'scale(1.05)';
+
+            setTimeout(() => {
+                // Animate flow: Token Check
+                flowTokenCheck.style.boxShadow = '0 0 15px var(--secondary-color)';
+                flowTokenCheck.style.transform = 'scale(1.05)';
+
+                setTimeout(() => {
+                    if (tokens > 0) {
+                        tokens--;
+                        message.textContent = '✅ 請求成功！令牌數: ' + tokens;
+                        message.style.color = 'var(--success-color)';
+
+                        // Highlight success path
+                        flowSuccess.style.boxShadow = '0 0 20px var(--success-color)';
+                        flowSuccess.style.transform = 'scale(1.1)';
+                        flowSuccess.style.background = 'rgba(16, 185, 129, 0.3)';
+                    } else {
+                        message.textContent = '❌ 請求被拒絕！令牌不足（等待自動補充或稍後重試）';
+                        message.style.color = 'var(--error-color)';
+
+                        // Highlight reject path
+                        flowReject.style.boxShadow = '0 0 20px var(--error-color)';
+                        flowReject.style.transform = 'scale(1.1)';
+                        flowReject.style.background = 'rgba(239, 68, 68, 0.3)';
+                    }
+                    updateBucketDisplay();
+
+                    // Reset after animation
+                    setTimeout(resetFlowHighlights, 800);
+                }, 150);
+            }, 150);
         }
 
-        function refillTokens() {
-            tokens = Math.min(tokens + refillAmount, maxTokens);
-            document.getElementById('demoMessage').textContent = '⚡ 已填充 ' + refillAmount + ' 個令牌';
-            document.getElementById('demoMessage').style.color = 'var(--primary-color)';
-            updateBucketDisplay();
+        function resetFlowHighlights() {
+            const nodes = ['flowRateLimiter', 'flowTokenCheck', 'flowSuccess', 'flowReject'];
+            nodes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.boxShadow = 'none';
+                    el.style.transform = 'scale(1)';
+                }
+            });
+            const flowSuccess = document.getElementById('flowSuccess');
+            const flowReject = document.getElementById('flowReject');
+            if (flowSuccess) flowSuccess.style.background = 'rgba(16, 185, 129, 0.1)';
+            if (flowReject) flowReject.style.background = 'rgba(239, 68, 68, 0.1)';
+        }
+
+        function toggleAutoRefill() {
+            const btn = document.getElementById('toggleRefillBtn');
+            const status = document.getElementById('autoRefillStatus');
+            const message = document.getElementById('demoMessage');
+
+            if (autoRefillEnabled) {
+                // 暫停自動補充
+                autoRefillEnabled = false;
+                clearInterval(refillIntervalId);
+                refillIntervalId = null;
+                btn.textContent = '繼續補充';
+                status.textContent = '⏸️ 已暫停';
+                status.style.color = 'var(--warning-color)';
+                message.textContent = '⏸️ 自動補充已暫停';
+                message.style.color = 'var(--warning-color)';
+            } else {
+                // 繼續自動補充
+                autoRefillEnabled = true;
+                startAutoRefill();
+                btn.textContent = '暫停補充';
+                status.textContent = '⚡ 自動補充中';
+                status.style.color = 'var(--success-color)';
+                message.textContent = '⚡ 自動補充已恢復';
+                message.style.color = 'var(--success-color)';
+            }
+        }
+
+        function startAutoRefill() {
+            // 每秒補充 1 個 token
+            refillIntervalId = setInterval(() => {
+                if (tokens < maxTokens) {
+                    tokens = Math.min(tokens + 1, maxTokens);
+                    updateBucketDisplay();
+                    // 補充時閃爍效果
+                    const bucket = document.getElementById('bucketFill');
+                    bucket.style.boxShadow = '0 0 20px var(--primary-color)';
+                    setTimeout(() => {
+                        bucket.style.boxShadow = 'none';
+                    }, 200);
+                }
+            }, 1000);
         }
 
         function resetBucket() {
             tokens = 2;
+            autoRefillEnabled = true;
+
+            // 重置自動補充
+            if (refillIntervalId) {
+                clearInterval(refillIntervalId);
+            }
+            startAutoRefill();
+
+            // 更新 UI
+            document.getElementById('toggleRefillBtn').textContent = '暫停補充';
+            document.getElementById('autoRefillStatus').textContent = '⚡ 自動補充中';
+            document.getElementById('autoRefillStatus').style.color = 'var(--success-color)';
             document.getElementById('demoMessage').textContent = '🔄 已重置到初始狀態';
             document.getElementById('demoMessage').style.color = 'var(--text-secondary)';
             updateBucketDisplay();
         }
 
-        // Auto refill every 5 seconds
-        setInterval(() => {
-            if (tokens < maxTokens) {
-                tokens = Math.min(tokens + 1, maxTokens);
-                updateBucketDisplay();
-            }
-        }, 5000);
+        // 啟動自動補充（1 token/秒）
+        startAutoRefill();
 
         // Copy code function
         function copyCode(button) {

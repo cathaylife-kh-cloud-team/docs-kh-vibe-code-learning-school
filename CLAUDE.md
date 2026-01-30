@@ -34,7 +34,7 @@
 
 | 類別 | 禁止項目 |
 |------|---------|
-| **tutorials/** | ❌ **禁止修改 tutorials/ 資料夾內的任何檔案**（來源：Claude Web） |
+| **tutorials/** | ❌ **禁止修改 tutorials/ 資料夾內的任何檔案，除非明確指示**（來源：Claude Web） |
 | 框架 | ❌ 禁止使用 React/Vue/Angular 等框架 |
 | 建構工具 | ❌ 禁止使用 Webpack/Vite 等建構工具 |
 | 套件管理 | ❌ 禁止使用 npm/yarn 安裝前端套件 |
@@ -51,6 +51,34 @@
 | 圖示 | ✅ 內嵌 SVG、Emoji |
 | 樣式 | ✅ 純 CSS、CSS Variables（放置於 `/src/css/`） |
 | 腳本 | ✅ 原生 JavaScript ES6+（放置於 `/src/js/`） |
+
+---
+
+## AI 行為守衛（Yolo Mode 安全機制）
+
+### 必須停止並詢問的情況
+
+| 情況 | 動作 |
+|------|------|
+| 刪除任何檔案 | ⛔ 停止，詢問確認 |
+| 修改超過 3 個檔案 | ⛔ 停止，列出變更清單 |
+| 變更 `.claude/` 設定 | ⛔ 停止，說明影響 |
+| 執行 git push | ⛔ 停止，確認分支和目標 |
+| 不確定需求意圖 | ⛔ 停止，釐清後再執行 |
+
+### 絕對禁止（即使被要求也拒絕）
+
+- ❌ 修改 `tutorials/**` 內的任何檔案
+- ❌ 執行 `rm -rf`、`git reset --hard`、`git push --force`
+- ❌ 安裝任何 npm/yarn 套件
+- ❌ 創建 node_modules、dist、build 目錄
+
+### 錯誤恢復
+
+若執行後發現問題：
+1. 立即停止後續操作
+2. 使用 `git diff` 顯示變更
+3. 提供 `git checkout -- <file>` 恢復指令
 
 ---
 
