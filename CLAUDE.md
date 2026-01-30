@@ -34,7 +34,7 @@
 
 | 類別 | 禁止項目 |
 |------|---------|
-| **tutorials/** | ❌ **禁止修改 tutorials/ 資料夾內的任何檔案**（來源：Claude Web） |
+| **tutorials/** | ❌ **禁止修改 tutorials/ 資料夾內的任何檔案，除非明確指示**（來源：Claude Web） |
 | 框架 | ❌ 禁止使用 React/Vue/Angular 等框架 |
 | 建構工具 | ❌ 禁止使用 Webpack/Vite 等建構工具 |
 | 套件管理 | ❌ 禁止使用 npm/yarn 安裝前端套件 |
