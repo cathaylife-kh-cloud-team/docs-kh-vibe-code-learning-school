@@ -8,7 +8,10 @@
       "Edit(src/data/**)",
       "Edit(CLAUDE.md)",
       "Edit(README.md)",
+      "Write(tutorials/**)",
 
+      "Bash(cp *)",
+      "Bash(copy *)",
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git add *)",
@@ -39,8 +42,6 @@
       "WebSearch"
     ],
     "deny": [
-      "Edit(tutorials/**)",
-      "Write(tutorials/**)",
 
       "Bash(rm -rf *)",
       "Bash(rm -r *)",

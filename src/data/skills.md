@@ -73,6 +73,7 @@
 
 # 🏗️ 架構模式 {#13-Architectural-Patterns}
 
+- 庫、框架、架構、平台 | 初級 | tutorials/13-architectural-patterns/tech-concepts-tutorial.html
 - Monolith vs Microservices vs SOA | 進階
 - Serverless Computing | 進階
 - Service Mesh | 進階
